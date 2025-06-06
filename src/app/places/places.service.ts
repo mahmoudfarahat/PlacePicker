@@ -3,11 +3,13 @@ import { inject, Injectable, signal } from '@angular/core';
 import { Place } from './place.model';
 import { HttpClient } from '@angular/common/http';
 import { map, catchError, throwError, tap } from 'rxjs';
+import { ErrorService } from '../shared/shared/error.service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class PlacesService {
+  private errorSerivce = inject(ErrorService); // Assuming you have an ErrorService for handling errors
   private httpClient = inject(HttpClient);
    private userPlaces = signal<Place[]>([]);
 
@@ -41,12 +43,26 @@ export class PlacesService {
     }).pipe(
       catchError((error) => {
         this.userPlaces.set(prevPlaces); // Revert to previous state on error
+        this.errorSerivce.showError('Error adding place to user places: ' + error.message);
         return throwError(() => new Error('Error adding place to user places: ' + error.message));
       })
     );
   }
 
-  removeUserPlace(place: Place) {}
+  removeUserPlace(place: Place) {
+      const  prevPlaces = this.userPlaces();
+    if(prevPlaces.some((p) => p.id === place.id)) {
+       this.userPlaces.set(prevPlaces.filter((p) => p.id !== place.id));
+    }
+return this.httpClient.delete('http://localhost:4000/user-places/' + place.id)
+.pipe(
+      catchError((error) => {
+        this.userPlaces.set(prevPlaces); // Revert to previous state on error
+        this.errorSerivce.showError('Error deleting place to user places: ' + error.message);
+        return throwError(() => new Error('Error deleting place to user places: ' + error.message));
+      })
+    );
+  }
 
   private fetchPlaces(url: string , errorMessage: string) {
    return  this.httpClient

@@ -1,3 +1,4 @@
+import { Place } from './../place.model';
 import { PlacesService } from './../places.service';
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 
@@ -5,7 +6,6 @@ import { PlacesContainerComponent } from '../places-container/places-container.c
 import { PlacesComponent } from '../places.component';
 import { HttpClient } from '@angular/common/http';
 import { map, catchError, throwError } from 'rxjs';
-import { Place } from '../place.model';
 
 @Component({
   selector: 'app-user-places',
@@ -41,4 +41,12 @@ places = this.placesService.loadedUserPlaces;
         }
         );
     }
+
+    onRemoveUserPlace(place: Place) {
+    const subscription =   this.placesService.removeUserPlace(place).subscribe();
+
+    this.destoryRef.onDestroy(() => {
+      subscription.unsubscribe();
+    });
+  }
 }
